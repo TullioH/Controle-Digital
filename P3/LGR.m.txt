@@ -1,0 +1,42 @@
+clear all; close all; clc;
+
+% G = (z+0.5)/((z-0.25)(z-1))
+T = 0.1
+Gz = zpk(-0.5, [0.25 1], 1, T)
+
+% LGR
+rlocus(Gz)
+grid on
+
+% Análise Estabilidade
+Gw = tf(d2c(Gz,'tustin'))
+
+% Circulo tempo de assentamento
+Ts = 0.8;
+sigma = -4/Ts;
+r = exp(sigma*T);
+[x,y] = Circulo(r);
+hold on;
+plot(x,y);
+
+% Resposta Malha Fechada
+K = 0.325;
+figure;
+step(feedback(K*Gz,1));
+
+%% Gz = K(z+0.8) / (z-0.5)(z-1)
+
+T = 0.1
+Gz = zpk(-0.8, [0.5 1], 1, T)
+
+rlocus(Gz)
+grid on
+
+Gw = tf(d2c(Gz,'tustin'))
+
+Ts = 0.9;
+sigma = -4/Ts;
+r = exp(sigma*T);
+[x,y] = Circulo(r);
+hold on;
+plot(x,y);

@@ -1,0 +1,63 @@
+clear all; close all; clc;
+
+%% Regime Transiente
+
+T = [0.1 0.5]
+
+% Gp = 1/(s*(S+1))
+Gc = zpk([], [0 -1], 1)
+
+Gz1 = c2d(Gc,T(1))
+Gz2 = c2d(Gc,T(2))
+
+Gmf_c = feedback(Gc, 1)
+Gmf_1 = feedback(Gz1, 1)
+Gmf_2 = feedback(Gz2, 1)
+
+step(Gmf_c); hold on; 
+step(Gmf_1); hold on; 
+step(Gmf_2); hold on; 
+
+%% Solução em Equação de Diferenças
+
+time = 500;
+
+% vetor no matlab começa em 1 e não em 0
+r = ones(1, time);
+
+for k = 1 : time
+    
+    if k == 1
+        c1(k) = 0;
+        c2(k) = 0;
+    end
+    
+    if k == 2
+        c1(k) = 0.0048;
+        c2(k) = 0.1065;
+    end
+    
+    if k > 2
+        c1(k) = 1.9*c1(k-1)-0.9095*c1(k-2)+0.0048*r(k-1)+0.004679*r(k-2);
+        c2(k) = 1.5*c2(k-1)-0.6967*c2(k-2)+0.1065*r(k-1)+0.0902*r(k-2);
+    end
+    
+end
+
+figure;
+
+subplot(2,1,1)
+step(Gmf_1); hold on; plot([0:(time-1)]*T(1),c1,'rx')
+legend('Comando step', 'Equações de diferença')
+
+subplot(2,1,2)
+step(Gmf_2); hold on; plot([0:(time-1)]*T(2),c2,'rx')
+legend('Comando step', 'Equações de diferença')
+
+%% Mapeamento da Região de Desempenho no Plano z
+
+% Tempo de assentamento ou acomodação (Ta)
+
+% Tempo de pico (Tp)
+
+% Amortecimento (Ç)

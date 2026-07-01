@@ -1,0 +1,43 @@
+clc; close all; clear all
+
+%% PROGRAMA OTIMIZACO PID - ENTRADA PARA QUALQUER FUNCAO G(Z)
+
+%% Ponto Inicial dos Parametros do Controlador %% IMPORTANTE DEFINICAO %%
+kp_ini=0.1; ki_ini=0.1; kd_ini=0.1;
+x0 = [kp_ini ki_ini kd_ini];
+
+%% Limites Maximos e Minimos dos Parametros
+kp_max=0.5; ki_max=0.5; kd_max=0.2;
+kp_min=0; ki_min=0; kd_min=0;
+v_max=[kp_max ki_max kd_max];
+v_min=[kp_min ki_min kd_min];
+
+%% Especificacao Desejada + implicito erro em RP zerado 
+tresposta_des=4;
+
+%% Tempos de Amostragem e de Simulacao
+Ts=0.1;
+tsim=10; 
+tempo=[0:Ts:tsim-Ts];
+
+%% Definicao do perfil de entrada - Degrau Unitario
+u=ones(length(tempo),1);
+
+%% Saida de Referencia - Degrau Filtrado 
+G_ref=tf([0 1],[tresposta_des/4 1]); % 4 x tempo de resposta = 98% da resposta final desejada
+yref=lsim(G_ref,u,tempo);
+
+%% Modelo do Planta Discreta
+Gz=zpk([],[0.1 0.5],1,Ts);
+
+%% Definicao do Problema de Otimizacao
+options = optimset('Display','iter','MaxFunEvals',500);
+[p,fval] = fmincon(@funcao_custo,x0,[],[],[],[],v_min,v_max,[],options,yref,Ts,tsim,Gz)
+
+%% Simulacao em Malha Fechada com Parametros otimos
+Gc=pid(p(1),p(2),p(3),0,Ts,'IFormula','BackwardEuler');
+y_opt=step(feedback(Gc*Gz,1),tempo);
+
+%% Plotar Resultados Obtidos
+stairs(tempo,y_opt);hold on;stairs(tempo,yref,'r');
+legend('Sintonia PID Otimizado','Referencia');title('Resposta ao Degrau Filtrado - PID')

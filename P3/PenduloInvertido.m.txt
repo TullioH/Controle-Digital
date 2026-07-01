@@ -1,0 +1,51 @@
+clear all; close all; clc;
+
+%% Parâmetros do Modelo do Pêndulo Invertido
+m1 = 2; m2 = 0.1; l = 0.3; g = 9.8;
+
+%% Matrizes de Estado - Sistema Contínuo
+A = [0 1 0 0; ((m1+m2)*g)/(m1*l) 0 0 0; 0 0 0 1; -(m2/m1)*g 0 0 0];
+B = [0; -1/(m1*l); 0; 1/m1];
+
+%% Matrizes de Estado - Sistema Discreto
+T = 0.1;
+[Ad, Bd] = c2d(A, B, T);
+
+%% Cálculo da Matriz de Ganhos Kd
+Qd = diag([1 1 1 1]);
+Rd = 1;
+Kd = dlqr(Ad, Bd, Qd, Rd);
+
+%% Simulação da Planta
+t = 10;                             % Tempo de Simulação
+tempo = [0:T:t];                    % Escala de Tempo
+x(1,:) = [20*pi/180; 0; 0; 0];      % Condição inicial - pêndulo inicia em 20°
+for k = 1:10/T                      % Loop para simular a planta em malha fechada
+    u(k) = -Kd*x(k,:)';
+    x(k+1,:) = Ad*x(k,:)'+Bd*u(k);
+end
+
+angulo = (180/pi)*x(:,1);
+velocidade = x(:,2);
+posicao = x(:,3);
+velocidade_carro = x(:,4);
+comando = u;
+
+%% Plotar os resultados obtidos
+
+subplot(2,2,1)
+stairs(tempo,angulo,'LineWidth',2); grid on;
+title('Posição Angular Pêndulo [º]');
+subplot(2,2,2)
+stairs(tempo,velocidade,'LineWidth',2); grid on;
+title('Velocidade Angular Pêndulo [rad/s]');
+subplot(2,2,3)
+stairs(tempo,posicao,'LineWidth',2); grid on;
+title('Posição Carro [m]');
+subplot(2,2,4)
+stairs(tempo,velocidade_carro,'LineWidth',2); grid on;
+title('Velocidade Carro [m/s]');
+
+figure
+stairs(tempo(1:length(tempo)-1),comando,'LineWidth',2); grid on;
+title('Comando [N]');
